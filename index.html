@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Rabbit Promo</title>
+<style>
+  /* Page chrome — just to host the sidebar that contains the promo */
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #f4f5f7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    font-size: 13px;
+    color: #27282c;
+  }
+
+  .page {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    position: relative;
+    flex: 0 0 260px;
+    background: #ffffff;
+    border-right: 1px solid #e3e6eb;
+    overflow: hidden;
+  }
+
+  .sidebar-items {
+    padding: 16px;
+    color: #27282c;
+  }
+
+  .sidebar-items .item {
+    padding: 8px 12px;
+    margin: 0 -12px;
+    border-radius: 4px;
+    cursor: default;
+  }
+
+  .sidebar-items .item:hover {
+    background: #f0f2f5;
+  }
+
+  .main {
+    flex: 1;
+    padding: 32px;
+  }
+
+  .main h1 {
+    font-size: 20px;
+    margin: 0 0 16px;
+  }
+
+  .main p {
+    line-height: 1.5;
+    max-width: 640px;
+    color: #5d5f66;
+  }
+
+  /* ============================================================
+     NavigationV2Psst — ported from NavigationV2PsstComponent.kt
+     ============================================================ */
+
+  /* --- container (StyleSheet.container) --- */
+  .rabbit-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 0;
+    transition: height 600ms;
+    background-image: linear-gradient(0deg, #ffffff 10%, rgba(255, 255, 255, 0) 100%);
+  }
+
+  /* --- item (common props on each image layer) --- */
+  .rabbit-container .item-layer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    max-width: none;
+    max-height: none;
+    display: block;
+    width: 166px;
+    height: 139px;
+  }
+
+  /* --- z-indexes --- */
+  .rabbit-container .background { z-index: 0; }
+  .rabbit-container .hand { z-index: 2; }
+  .rabbit-container .head { z-index: 2; }
+
+  /* --- bubble wrapper (vertical, padding horizontal 1.5.unit = 12px) --- */
+  .rabbit-bubble-wrapper {
+    display: flex;
+    flex-direction: column;
+    padding: 0 12px;
+    position: relative;
+    z-index: 3;
+  }
+
+  /* --- bubble (StyleSheet.bubble) ---
+     padding: 1.unit = 8px
+     box-shadow: fineShadowColor 0 4px 16px 0 (light theme: rgba(12,40,97,0.08))
+     border-radius: 4px
+  */
+  .rabbit-bubble {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    background-color: #ffffff;
+    position: relative;
+    z-index: 1;
+    padding: 8px;
+    box-shadow: 0 4px 16px 0 rgba(12, 40, 97, 0.08);
+    border-radius: 4px;
+  }
+
+  /* --- bubble content row (horizontal, alignItems flex-start, marginBottom 1.5.unit=12px) --- */
+  .rabbit-bubble-content-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* text color — regardless of theme, XTheme.theme.textColor.rawValue (default theme text) */
+  .rabbit-bubble-text {
+    color: #27282c;
+    flex: 1 1 auto;
+    line-height: 1.4;
+  }
+
+  .rabbit-bubble-text .bold {
+    font-weight: 600;
+  }
+
+  /* --- close icon (StyleSheet.closeIcon) ---
+     opacity 0.5, color secondaryTextColor, becomes 1 on bubble hover
+  */
+  .rabbit-close {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    margin-left: 6px;
+    margin-top: 1px;
+    color: #8b8d94;
+    opacity: 0.5;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .rabbit-bubble:hover .rabbit-close {
+    opacity: 1;
+  }
+
+  .rabbit-close svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+  }
+
+  /* --- Let's go! button (primary, small, marginTop 3px on bubbleContent marker) --- */
+  .rabbit-button {
+    margin-top: 3px;
+    appearance: none;
+    border: 0;
+    background: #167DFF;
+    color: #ffffff;
+    font: inherit;
+    font-weight: 500;
+    padding: 0 10px;
+    height: 24px;
+    line-height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .rabbit-button:hover {
+    background: #0d6be0;
+  }
+
+  /* =========================================================
+     State classes — mirror StyleSheet.appeared / disappeared /
+     appearing / disappearing.
+     ========================================================= */
+
+  /* appeared: height 244px, bubble visible, everything at translateY(0) */
+  .rabbit-container.appeared {
+    height: 244px;
+  }
+  .rabbit-container.appeared .rabbit-bubble { display: flex; }
+  .rabbit-container.appeared .background { transform: translateY(0); }
+  .rabbit-container.appeared .hand { transform: translateY(0); }
+  .rabbit-container.appeared .head { transform: translateY(0); }
+
+  /* disappeared: height 53px, bubble hidden, images shifted down */
+  .rabbit-container.disappeared {
+    height: 53px;
+  }
+  .rabbit-container.disappeared .rabbit-bubble { display: none; }
+  .rabbit-container.disappeared .background { transform: translateY(86px); }
+  .rabbit-container.disappeared .hand { transform: translateY(139px); }
+  .rabbit-container.disappeared .head { transform: translateY(86px); }
+  /* when fully hidden, clicking the rabbit re-shows it */
+  .rabbit-container.disappeared {
+    cursor: pointer;
+  }
+
+  /* appearing: same target as appeared, plus entry animations */
+  .rabbit-container.appearing {
+    height: 244px;
+  }
+  .rabbit-container.appearing .rabbit-bubble { display: flex; }
+  .rabbit-container.appearing .background { transform: translateY(0); }
+  .rabbit-container.appearing .hand { transform: translateY(0); }
+  .rabbit-container.appearing .head { transform: translateY(0); }
+
+  .rabbit-container.appearing .rabbit-bubble {
+    animation: rabbit-bubble-appear 1200ms ease-in-out;
+  }
+  /* bubbleContent marker animation (duration 1200ms, easeInOut, from opacity 0 → 80% opacity 0 → opacity 1) */
+  .rabbit-container.appearing .rabbit-bubble-content-row,
+  .rabbit-container.appearing .rabbit-button {
+    animation: rabbit-bubble-content-appear 1200ms ease-in-out;
+  }
+  .rabbit-container.appearing .background {
+    animation: rabbit-bg-appear 600ms ease-in-out;
+  }
+  .rabbit-container.appearing .hand {
+    animation:
+      rabbit-hand-appear-1 125ms ease-in,
+      rabbit-hand-appear-2 475ms ease-out 125ms;
+  }
+  .rabbit-container.appearing .head {
+    animation:
+      rabbit-head-appear-1 100ms ease-in,
+      rabbit-head-appear-2 500ms ease-out 100ms;
+  }
+
+  /* disappearing: same target as disappeared, plus exit animations */
+  .rabbit-container.disappearing {
+    height: 53px;
+  }
+  .rabbit-container.disappearing .rabbit-bubble { display: none; }
+  .rabbit-container.disappearing .background { transform: translateY(86px); }
+  .rabbit-container.disappearing .hand { transform: translateY(139px) rotate(-30deg); }
+  .rabbit-container.disappearing .head { transform: translateY(86px); }
+
+  .rabbit-container.disappearing .background {
+    animation: rabbit-bg-disappear 600ms ease-in-out;
+  }
+  .rabbit-container.disappearing .hand {
+    animation:
+      rabbit-hand-disappear-1 125ms ease-in,
+      rabbit-hand-disappear-2 475ms ease-out 125ms;
+  }
+  .rabbit-container.disappearing .head {
+    animation:
+      rabbit-head-disappear-1 100ms ease-in,
+      rabbit-head-disappear-2 500ms ease-out 100ms;
+  }
+
+  /* Keyframes — exact copies from Kotlin StyleSheet */
+
+  @keyframes rabbit-bubble-appear {
+    from { transform: scale(0); opacity: 0; }
+    55%  { transform: scale(0); opacity: 0; }
+    80%  { transform: scale(1); opacity: 1; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes rabbit-bubble-content-appear {
+    from { opacity: 0; }
+    80%  { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes rabbit-bg-appear {
+    from { transform: translateY(86px); }
+    to   { transform: translateY(0); }
+  }
+
+  @keyframes rabbit-bg-disappear {
+    from { transform: translateY(0); }
+    to   { transform: translateY(86px); }
+  }
+
+  @keyframes rabbit-hand-appear-1 {
+    from { transform: translateY(139px) rotate(-30deg); }
+    to   { transform: translateY(58px) rotate(-20deg); }
+  }
+
+  @keyframes rabbit-hand-appear-2 {
+    from { transform: translateY(58px) rotate(-20deg); }
+    to   { transform: translateY(0) rotate(0deg); }
+  }
+
+  @keyframes rabbit-hand-disappear-1 {
+    from { transform: translateY(0) rotate(0deg); }
+    to   { transform: translateY(58px) rotate(-20deg); }
+  }
+
+  @keyframes rabbit-hand-disappear-2 {
+    from { transform: translateY(58px) rotate(-20deg); }
+    to   { transform: translateY(139px) rotate(-30deg); }
+  }
+
+  @keyframes rabbit-head-appear-1 {
+    from { transform: translateY(86px); }
+    to   { transform: translateY(58px); }
+  }
+
+  @keyframes rabbit-head-appear-2 {
+    from { transform: translateY(58px); }
+    to   { transform: translateY(0); }
+  }
+
+  @keyframes rabbit-head-disappear-1 {
+    from { transform: translateY(0); }
+    to   { transform: translateY(58px); }
+  }
+
+  @keyframes rabbit-head-disappear-2 {
+    from { transform: translateY(58px); }
+    to   { transform: translateY(86px); }
+  }
+
+  /* Dev-only control strip */
+  .controls {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    background: #27282c;
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    box-shadow: 0 4px 16px 0 rgba(12, 40, 97, 0.2);
+  }
+  .controls button {
+    appearance: none;
+    border: 0;
+    background: #3a3b40;
+    color: #fff;
+    font: inherit;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .controls button:hover { background: #4a4b50; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-items">
+        <div class="item">Dashboard</div>
+        <div class="item">Projects</div>
+        <div class="item">Chats</div>
+        <div class="item">Reviews</div>
+        <div class="item">Issues</div>
+        <div class="item">Documents</div>
+      </div>
+
+      <!-- NavigationV2Psst -->
+      <div class="rabbit-container appeared" id="rabbit">
+        <div class="rabbit-bubble-wrapper">
+          <div class="rabbit-bubble">
+            <div class="rabbit-bubble-content-row">
+              <span class="rabbit-bubble-text">
+                Ready to blast into the future? <span class="bold">Try the new navigation in Space!</span>
+              </span>
+              <span class="rabbit-close" id="rabbit-close" title="Dismiss">
+                <!-- CircletIcon.CLOSE_SMALL analogue -->
+                <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                  <path d="M4 4l8 8M12 4l-8 8"/>
+                </svg>
+              </span>
+            </div>
+            <button class="rabbit-button" id="rabbit-accept">Let's go!</button>
+          </div>
+        </div>
+        <img class="item-layer background" src="images/psst-background.svg" alt="">
+        <img class="item-layer hand" src="images/psst-hand.svg" alt="">
+        <img class="item-layer head" src="images/psst-head.svg" alt="">
+      </div>
+    </aside>
+
+    <main class="main">
+      <h1>Rabbit Promo — HTML/JS port</h1>
+      <p>
+        This page recreates the old Space <em>Single Project Navigation</em>
+        promo banner (NavigationV2PsstComponent.kt, removed in CRL-T-24028).
+        Load the page: the rabbit waits 2400&nbsp;ms, then pops up from the
+        bottom of the sidebar with the speech bubble. Dismiss it with the
+        <b>×</b> inside the bubble; click the hiding rabbit to bring it back.
+        Hovering the tucked-away rabbit peeks the bubble out again without
+        un-dismissing it, matching the original behavior
+        (<code>isHidden = !hovered &amp;&amp; hidden</code>).
+      </p>
+    </main>
+  </div>
+
+  <div class="controls">
+    <span>state: <b id="state-label">disappeared</b></span>
+    <button id="btn-show">show()</button>
+    <button id="btn-hide">hide()</button>
+    <button id="btn-replay">replay intro</button>
+  </div>
+
+<script>
+/*
+  Port of NavigationV2PsstVMImpl behavior:
+
+  - hidden: Property<Boolean>. Initially true if first-time (no seenAnimation, no isVisited).
+  - isVisited: persisted boolean — flipped true by hide(), false by show().
+  - After 2400 ms delay, hidden flips to false (triggers appearing → appeared).
+  - After another 1200 ms (animation over), seenAnimation is set true.
+
+  Rendered css class comes from:
+      isHidden = !hovered && hidden
+      scanPreviousToCurrent -> 'appeared' | 'disappeared' | 'appearing' | 'disappearing'
+*/
+
+(function () {
+  const rabbit = document.getElementById('rabbit');
+  const closeBtn = document.getElementById('rabbit-close');
+  const acceptBtn = document.getElementById('rabbit-accept');
+  const stateLabel = document.getElementById('state-label');
+  const btnShow = document.getElementById('btn-show');
+  const btnHide = document.getElementById('btn-hide');
+  const btnReplay = document.getElementById('btn-replay');
+
+  const STATES = ['appeared', 'disappeared', 'appearing', 'disappearing'];
+
+  // VM state
+  let seenAnimation = false;
+  let isVisited = false;
+  let hidden = true;     // model.hidden — starts hidden for first-time animation
+  let hovered = false;
+
+  let prevIsHidden = null; // null on first emit -> pick static 'appeared'/'disappeared'
+  let settleTimer = null;
+
+  // Longest animation durations — when the transition is over, settle the
+  // class back to its steady target so state is truthful.
+  const APPEAR_MS = 1200;    // bubble animation is the longest
+  const DISAPPEAR_MS = 600;  // bg / hand / head all finish at 600ms
+
+  // Recompute css class from (hidden, hovered) exactly like scanPreviousToCurrent.
+  function applyState() {
+    const isHidden = !hovered && hidden;
+    let cls;
+    if (prevIsHidden === null) {
+      cls = isHidden ? 'disappeared' : 'appeared';
+    } else if (prevIsHidden !== isHidden) {
+      cls = isHidden ? 'disappearing' : 'appearing';
+    } else {
+      cls = isHidden ? 'disappeared' : 'appeared';
+      const current = STATES.find(s => rabbit.classList.contains(s));
+      if (current === 'appearing' || current === 'disappearing') {
+        return; // let the in-flight animation finish
+      }
+    }
+    prevIsHidden = isHidden;
+    for (const s of STATES) rabbit.classList.remove(s);
+    rabbit.classList.add(cls);
+    stateLabel.textContent = cls;
+
+    if (settleTimer) { clearTimeout(settleTimer); settleTimer = null; }
+    if (cls === 'appearing') {
+      settleTimer = setTimeout(() => {
+        if (rabbit.classList.contains('appearing')) {
+          rabbit.classList.remove('appearing');
+          rabbit.classList.add('appeared');
+          stateLabel.textContent = 'appeared';
+        }
+      }, APPEAR_MS);
+    } else if (cls === 'disappearing') {
+      settleTimer = setTimeout(() => {
+        if (rabbit.classList.contains('disappearing')) {
+          rabbit.classList.remove('disappearing');
+          rabbit.classList.add('disappeared');
+          stateLabel.textContent = 'disappeared';
+        }
+      }, DISAPPEAR_MS);
+    }
+  }
+
+  // Hover peek — exactly the onMouseEnter/onMouseLeave in Kotlin.
+  rabbit.addEventListener('mouseenter', () => { hovered = true; applyState(); });
+  rabbit.addEventListener('mouseleave', () => { hovered = false; applyState(); });
+
+  // Close icon: xClickable with { hovered = false; model.hide() }
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hovered = false;
+    hide();
+  });
+
+  // Clicking the rabbit while hidden calls model.show() — implemented via
+  // listener on the whole container that only fires in the disappeared state.
+  rabbit.addEventListener('click', (e) => {
+    if (hidden && rabbit.classList.contains('disappeared')) {
+      show();
+    }
+  });
+
+  acceptBtn.addEventListener('click', () => {
+    // acceptAction in the original triggers a server call + a video. For the
+    // demo, we just mimic accept by fading the banner away.
+    hide();
+  });
+
+  btnShow.addEventListener('click', show);
+  btnHide.addEventListener('click', hide);
+  btnReplay.addEventListener('click', runInitialAnimation);
+
+  function hide() {
+    // MainNavigationMetrics.NavigationV2PromoDismiss would fire here.
+    isVisited = true;
+    hidden = true;
+    applyState();
+  }
+
+  function show() {
+    isVisited = false;
+    hidden = false;
+    applyState();
+  }
+
+  function runInitialAnimation() {
+    // Reset state.
+    seenAnimation = false;
+    isVisited = false;
+    hidden = true;
+    hovered = false;
+    prevIsHidden = null;
+    for (const s of STATES) rabbit.classList.remove(s);
+    rabbit.classList.add('disappeared');
+    stateLabel.textContent = 'disappeared';
+
+    // init block:
+    //   delay(2400); hidden.value = false;
+    //   delay(1200); seenAnimation.value = true;
+    setTimeout(() => {
+      if (isVisited) return;
+      hidden = false;
+      prevIsHidden = true; // force transition => appearing
+      applyState();
+      setTimeout(() => {
+        seenAnimation = true;
+      }, 1200);
+    }, 2400);
+  }
+
+  // Kick off the same first-run behavior as NavigationV2PsstVMImpl.init.
+  runInitialAnimation();
+})();
+</script>
+</body>
+</html>
